@@ -6,6 +6,7 @@ import urllib
 import urllib2
 import re
 
+import random
 # standard app engine imports
 from google.appengine.api import urlfetch
 from google.appengine.ext import ndb
@@ -23,11 +24,6 @@ class EnableStatus(ndb.Model):
     # key name: str(chat_id)
     enabled = ndb.BooleanProperty(indexed=False, default=False)
 
-class ChatData(ndb.Model):
-    #data = ndb.JsonProperty() #StringProperty()
-    conversation = ndb.JsonProperty() #StringProperty()
-    #resp = ndb.StringProperty()
-
 # ================================
 
 def setEnabled(chat_id, yes):
@@ -44,6 +40,30 @@ def getEnabled(chat_id):
 
 
 # ================================
+
+digits = '123456789'
+size = 4
+num = ''
+numattempts = -1
+
+class ChatData(ndb.Model):
+    num = ndb.StringProperty()
+    numattempts = ndb.IntegerProperty()
+
+def updateCD(chat_id, num, numattempts):
+    cb = ChatData.get_or_insert(str(chat_id))
+    cb.num = num
+    cb.numattempts = numattempts
+    cb.put()
+
+def getCD(chat_id):
+    cb = ChatData.get_by_id(str(chat_id))
+    if cb:
+        num = cb.num
+        numattempts = cb.numattempts
+
+
+
 
 class MeTester(webapp2.RequestHandler):
     def get(self):
@@ -77,7 +97,6 @@ class WebhookHandler(webapp2.RequestHandler):
         logging.info('request body:')
         logging.info(body)
         self.response.write(json.dumps(body))
-
         update_id = body['update_id']
         message = body['message']
         message_id = message.get('message_id')
@@ -103,17 +122,37 @@ class WebhookHandler(webapp2.RequestHandler):
             logging.info('send response:')
             logging.info(resp)
 
+
+        getCD(chat_id)
         if text.startswith('/'):
-            if True:
-                reply('Bee doo!!')
-                setEnabled(chat_id, True)
-            elif text == '/nobeedoo':
-                reply('BEE DO BEE DO BEE DO')
-                setEnabled(chat_id, False)
+            if "start" in text:
+                if numattempts > 0:
+                    reply("Finish the current game!!")
+                else:
+                    reply("Guess the 4 digit number I guessed!!")
+                    num = ''.join(random.sample(digits,size))
+                    updateCD(chat_id, num, 0)
             else:
-                reply('Bananonia..?')
+                reply('Oopsie!!')
         else:
-            reply('I know nothing!! :(')
+            if numattempts > 0:
+                if len(text) == size and all(char in digits for char in text) and len(set(text)) == size:
+                    if text == num:
+                      reply("You win!! In "+numattempts+" tries.")
+                      return
+                    numattempts += 1
+                    bulls = cows = 0
+                    for i in range(size):
+                      if text[i] == num[i]:
+                          bulls += 1
+                      elif text[i] in num:
+                          cows += 1
+                    reply("Attempt: "+numattempts+"\nBulls: "+bulls+"\nCows: "+cows)
+                    updateCD(chat_id, num, numattempts)
+                    return
+                reply("4 digits!!!!")
+            else:
+                reply("Click /start")
 
 
 app = webapp2.WSGIApplication([
