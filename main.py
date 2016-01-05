@@ -6,14 +6,12 @@ import urllib
 import urllib2
 import re
 
-# for sending images
-from PIL import Image
 # standard app engine imports
 from google.appengine.api import urlfetch
 from google.appengine.ext import ndb
 import webapp2
 
-TOKEN = '171732760:AAE6rmuJlQyhc13vPxbDl0KBA0w1BJmnH-c'
+TOKEN = '117344370:AAHHCNDsY6DGWdFBDNnk4e-KSVwXGOH09xU'
 
 BASE_URL = 'https://api.telegram.org/bot' + TOKEN + '/'
 
@@ -47,6 +45,10 @@ def getEnabled(chat_id):
 
 # ================================
 
+class MeTester(webapp2.RequestHandler):
+    def get(self):
+        urlfetch.set_default_fetch_deadline(60)
+        self.response.write('yolo')
 
 class MeHandler(webapp2.RequestHandler):
     def get(self):
