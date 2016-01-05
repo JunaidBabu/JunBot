@@ -41,10 +41,6 @@ def getEnabled(chat_id):
 
 # ================================
 
-digits = '123456789'
-size = 4
-num = ''
-numattempts = -1
 
 class ChatData(ndb.Model):
     num = ndb.StringProperty()
@@ -59,11 +55,15 @@ def updateCD(chat_id, num, numattempts):
 def getCD(chat_id):
     cb = ChatData.get_by_id(str(chat_id))
     if cb:
-        num = cb.num
-        numattempts = cb.numattempts
+        return cb
     else:
-        num = ''.join(random.sample(digits,size))
-        updateCD(chat_id, num, 0)
+        cb = ChatData.get_or_insert(str(chat_id))
+        digits = '123456789'
+        size = 4
+        cb.num = ''.join(random.sample(digits,size))
+        cb.numattempts = 0
+        cb.put()
+        return cb
 
 
 
@@ -125,7 +125,12 @@ class WebhookHandler(webapp2.RequestHandler):
             logging.info(resp)
 
 
-        getCD(chat_id)
+        cd = getCD(chat_id)
+        digits = '123456789'
+        size = 4
+        num = cd.num
+        numattempts = cd.numattempts
+
         if text.startswith('/'):
             if "start" in text:
                 if numattempts > 0:
