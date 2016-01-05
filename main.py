@@ -61,7 +61,9 @@ def getCD(chat_id):
     if cb:
         num = cb.num
         numattempts = cb.numattempts
-
+    else:
+        num = ''.join(random.sample(digits,size))
+        updateCD(chat_id, num, 0)
 
 
 
@@ -130,8 +132,6 @@ class WebhookHandler(webapp2.RequestHandler):
                     reply("Finish the current game!!")
                 else:
                     reply("Guess the 4 digit number I guessed!!")
-                    num = ''.join(random.sample(digits,size))
-                    updateCD(chat_id, num, 0)
             else:
                 reply('Oopsie!!')
         else:
@@ -139,6 +139,9 @@ class WebhookHandler(webapp2.RequestHandler):
                 if len(text) == size and all(char in digits for char in text) and len(set(text)) == size:
                     if text == num:
                       reply("You win!! In "+numattempts+" tries.")
+                      numattempts = 0
+                      num = ''
+                      updateCD(chat_id, num, numattempts)
                       return
                     numattempts += 1
                     bulls = cows = 0
