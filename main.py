@@ -16,7 +16,8 @@ TOKEN = '117344370:AAHHCNDsY6DGWdFBDNnk4e-KSVwXGOH09xU'
 
 BASE_URL = 'https://api.telegram.org/bot' + TOKEN + '/'
 
-
+DIGITS = '0123456789'
+SIZE = 4
 
 # ================================
 
@@ -64,9 +65,7 @@ def getCD(chat_id, name):
         return cb
     else:
         cb = ChatData.get_or_insert(str(chat_id))
-        digits = '123456789'
-        size = 4
-        cb.num = ''.join(random.sample(digits,size))
+        cb.num = ''.join([random.choice(DIGITS) for _ in range(SIZE)])
         cb.numattempts = 0
         cb.games = 1
         cb.user = name
@@ -135,8 +134,7 @@ class WebhookHandler(webapp2.RequestHandler):
 
 
         cd = getCD(chat_id, str(chat))
-        digits = '123456789'
-        size = 4
+
         num = cd.num
         numattempts = cd.numattempts
         best = cd.best
@@ -159,10 +157,10 @@ class WebhookHandler(webapp2.RequestHandler):
                 reply('Oopsie!!')
         else:
             if numattempts > 0:
-                if len(text) == size and all(char in digits for char in text) and len(set(text)) == size:
+                if len(text) == SIZE and all(char in DIGITS for char in text): # and len(set(text)) == SIZE:
                     if text == num:
                       reply("You won in "+str(numattempts)+" tries!")
-                      num = ''.join(random.sample(digits,size))
+                      num = ''.join([random.choice(DIGITS) for _ in range(SIZE)])
                       if best == 0 or best > numattempts:
                           best = numattempts
                       numattempts = 0
@@ -170,15 +168,17 @@ class WebhookHandler(webapp2.RequestHandler):
                       return
                     numattempts += 1
                     bulls = cows = 0
-                    for i in range(size):
+                    for i in range(SIZE):
                       if text[i] == num[i]:
                           bulls += 1
-                      elif text[i] in num:
-                          cows += 1
+                    for i in range(len(set(text))):
+                      if "".join(set(text))[i] in num:
+                         cows += 1
+                    cows = cows - bulls
                     reply("Attempt: "+str(numattempts-1)+"\nBulls: "+str(bulls)+"\nCows: "+str(cows))
                     updateCD(chat_id, num, numattempts, games, str(chat), best)
                     return
-                reply("4 digits. Non repeating! No Zeroes")
+                reply("4 DIGITS!!!")
             else:
                 reply("Click /start")
 
