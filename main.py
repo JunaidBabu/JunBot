@@ -45,14 +45,18 @@ def getEnabled(chat_id):
 class ChatData(ndb.Model):
     num = ndb.StringProperty()
     numattempts = ndb.IntegerProperty()
+    user = ndb.StringProperty()
+    games = ndb.IntegerProperty()
 
-def updateCD(chat_id, num, numattempts):
+def updateCD(chat_id, num, numattempts, games, user):
     cb = ChatData.get_or_insert(str(chat_id))
     cb.num = num
     cb.numattempts = numattempts
+    cb.games = games
+    cb.user = user
     cb.put()
 
-def getCD(chat_id):
+def getCD(chat_id, name):
     cb = ChatData.get_by_id(str(chat_id))
     if cb:
         return cb
@@ -62,6 +66,8 @@ def getCD(chat_id):
         size = 4
         cb.num = ''.join(random.sample(digits,size))
         cb.numattempts = 0
+	cb.games = 1
+	cb.user = name
         cb.put()
         return cb
 
@@ -125,11 +131,12 @@ class WebhookHandler(webapp2.RequestHandler):
             logging.info(resp)
 
 
-        cd = getCD(chat_id)
+        cd = getCD(chat_id, str(chat))
         digits = '123456789'
         size = 4
         num = cd.num
         numattempts = cd.numattempts
+	games = cd.games
 
         if text.startswith('/'):
             if "start" in text:
@@ -138,17 +145,17 @@ class WebhookHandler(webapp2.RequestHandler):
                 else:
                     reply("Guess the 4 digit number I guessed!!")
 		    numattempts = 1
-		    updateCD(chat_id, num, numattempts)
+		    updateCD(chat_id, num, numattempts, games, str(chat))
             else:
                 reply('Oopsie!!')
         else:
             if numattempts > 0:
                 if len(text) == size and all(char in digits for char in text) and len(set(text)) == size:
                     if text == num:
-                      reply("You won in the "+str(numattempts)+"th try!")
+                      reply("You won in "+str(numattempts)+" tries!")
                       numattempts = 0
                       num = ''.join(random.sample(digits,size))
-                      updateCD(chat_id, num, numattempts)
+                      updateCD(chat_id, num, numattempts, games+1, str(chat))
                       return
                     numattempts += 1
                     bulls = cows = 0
@@ -158,7 +165,7 @@ class WebhookHandler(webapp2.RequestHandler):
                       elif text[i] in num:
                           cows += 1
                     reply("Attempt: "+str(numattempts-1)+"\nBulls: "+str(bulls)+"\nCows: "+str(cows))
-                    updateCD(chat_id, num, numattempts)
+                    updateCD(chat_id, num, numattempts, games, str(chat))
                     return
                 reply("4 digits. Non repeating!!!!")
             else:
