@@ -47,13 +47,15 @@ class ChatData(ndb.Model):
     numattempts = ndb.IntegerProperty()
     user = ndb.StringProperty()
     games = ndb.IntegerProperty()
+    best = ndb.IntegerProperty()
 
-def updateCD(chat_id, num, numattempts, games, user):
+def updateCD(chat_id, num, numattempts, games, user, best):
     cb = ChatData.get_or_insert(str(chat_id))
     cb.num = num
     cb.numattempts = numattempts
     cb.games = games
     cb.user = user
+    cb.best = best
     cb.put()
 
 def getCD(chat_id, name):
@@ -66,8 +68,9 @@ def getCD(chat_id, name):
         size = 4
         cb.num = ''.join(random.sample(digits,size))
         cb.numattempts = 0
-	cb.games = 1
-	cb.user = name
+        cb.games = 1
+        cb.user = name
+        cb.best = 0
         cb.put()
         return cb
 
@@ -136,7 +139,8 @@ class WebhookHandler(webapp2.RequestHandler):
         size = 4
         num = cd.num
         numattempts = cd.numattempts
-	games = cd.games
+        best = cd.best
+        games = cd.games
 
         if text.startswith('/'):
             if "start" in text:
@@ -144,8 +148,13 @@ class WebhookHandler(webapp2.RequestHandler):
                     reply("Finish the current game!!")
                 else:
                     reply("Guess the 4 digit number I guessed!!")
-		    numattempts = 1
-		    updateCD(chat_id, num, numattempts, games, str(chat))
+                    numattempts = 1
+                    updateCD(chat_id, num, numattempts, games, str(chat), best)
+            elif "showbest" in text.lower():
+                if best == 0:
+                    reply("Start playing first :|")
+                else:
+                    reply("Your best was "+str(best))
             else:
                 reply('Oopsie!!')
         else:
@@ -153,9 +162,11 @@ class WebhookHandler(webapp2.RequestHandler):
                 if len(text) == size and all(char in digits for char in text) and len(set(text)) == size:
                     if text == num:
                       reply("You won in "+str(numattempts)+" tries!")
-                      numattempts = 0
                       num = ''.join(random.sample(digits,size))
-                      updateCD(chat_id, num, numattempts, games+1, str(chat))
+                      if best == 0 or best > numattempts:
+                          best = numattempts
+                      numattempts = 0
+                      updateCD(chat_id, num, numattempts, games+1, str(chat), best)
                       return
                     numattempts += 1
                     bulls = cows = 0
@@ -165,9 +176,9 @@ class WebhookHandler(webapp2.RequestHandler):
                       elif text[i] in num:
                           cows += 1
                     reply("Attempt: "+str(numattempts-1)+"\nBulls: "+str(bulls)+"\nCows: "+str(cows))
-                    updateCD(chat_id, num, numattempts, games, str(chat))
+                    updateCD(chat_id, num, numattempts, games, str(chat), best)
                     return
-                reply("4 digits. Non repeating!!!!")
+                reply("4 digits. Non repeating! No Zeroes")
             else:
                 reply("Click /start")
 
