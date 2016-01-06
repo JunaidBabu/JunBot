@@ -145,7 +145,7 @@ class WebhookHandler(webapp2.RequestHandler):
             if numattempts > 0:
                 if len(text) == size and all(char in digits for char in text) and len(set(text)) == size:
                     if text == num:
-                      reply("You won!! In "+str(numattempts)+" tries.")
+                      reply("You won in the "+str(numattempts)+"th try!")
                       numattempts = 0
                       num = ''.join(random.sample(digits,size))
                       updateCD(chat_id, num, numattempts)
@@ -157,7 +157,7 @@ class WebhookHandler(webapp2.RequestHandler):
                           bulls += 1
                       elif text[i] in num:
                           cows += 1
-                    reply("Attempt: "+str(numattempts)+"\nBulls: "+str(bulls)+"\nCows: "+str(cows))
+                    reply("Attempt: "+str(numattempts-1)+"\nBulls: "+str(bulls)+"\nCows: "+str(cows))
                     updateCD(chat_id, num, numattempts)
                     return
                 reply("4 digits. Non repeating!!!!")
