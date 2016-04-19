@@ -49,14 +49,16 @@ class ChatData(ndb.Model):
     user = ndb.StringProperty()
     games = ndb.IntegerProperty()
     best = ndb.IntegerProperty()
+    guesshistory = ndb.StringProperty()
 
-def updateCD(chat_id, num, numattempts, games, user, best):
+def updateCD(chat_id, num, numattempts, games, user, best, history):
     cb = ChatData.get_or_insert(str(chat_id))
     cb.num = num
     cb.numattempts = numattempts
     cb.games = games
     cb.user = user
     cb.best = best
+    cb.guesshistory = history
     cb.put()
 
 def getCD(chat_id, name):
@@ -70,6 +72,7 @@ def getCD(chat_id, name):
         cb.games = 1
         cb.user = name
         cb.best = 0
+        cb.guesshistory = ""
         cb.put()
         return cb
 
@@ -130,7 +133,7 @@ class WebhookHandler(webapp2.RequestHandler):
                 })).read()
 
             logging.info('send response:')
-            logging.info(resp)
+            #logging.info(resp)
 
 
         cd = getCD(chat_id, str(chat))
@@ -139,7 +142,10 @@ class WebhookHandler(webapp2.RequestHandler):
         numattempts = cd.numattempts
         best = cd.best
         games = cd.games
-
+        if cd.guesshistory:
+            history = cd.guesshistory
+        else:
+            history = ""
         if text.startswith('/'):
             if "start" in text:
                 if numattempts > 0:
@@ -147,12 +153,14 @@ class WebhookHandler(webapp2.RequestHandler):
                 else:
                     reply("Guess the 4 digit number I guessed!!")
                     numattempts = 1
-                    updateCD(chat_id, num, numattempts, games, str(chat), best)
+                    updateCD(chat_id, num, numattempts, games, str(chat), best, history)
             elif "showbest" in text.lower():
                 if best == 0:
                     reply("Start playing first :|")
                 else:
                     reply("Your best was "+str(best))
+            elif "history" in text:
+                reply (history)
             else:
                 reply('Oopsie!!')
         else:
@@ -164,7 +172,8 @@ class WebhookHandler(webapp2.RequestHandler):
                       if best == 0 or best > numattempts:
                           best = numattempts
                       numattempts = 0
-                      updateCD(chat_id, num, numattempts, games+1, str(chat), best)
+                      history = ""
+                      updateCD(chat_id, num, numattempts, games+1, str(chat), best, history)
                       return
                     numattempts += 1
                     bulls = cows = 0
@@ -175,8 +184,12 @@ class WebhookHandler(webapp2.RequestHandler):
                       if "".join(set(text))[i] in num:
                          cows += 1
                     cows = cows - bulls
+                    try:
+                        history+="#"+str(numattempts-1)+". "+text+"\nBulls: "+str(bulls)+"\nCows: "+str(cows)+"\n\n"
+                    except:
+                        history = ""
                     reply("Attempt: "+str(numattempts-1)+"\nBulls: "+str(bulls)+"\nCows: "+str(cows))
-                    updateCD(chat_id, num, numattempts, games, str(chat), best)
+                    updateCD(chat_id, num, numattempts, games, str(chat), best, history)
                     return
                 reply("4 DIGITS!!!")
             else:
