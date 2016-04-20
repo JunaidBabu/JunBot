@@ -110,18 +110,51 @@ class WebhookHandler(webapp2.RequestHandler):
         logging.info('request body:')
         logging.info(body)
         self.response.write(json.dumps(body))
-        update_id = body['update_id']
-        message = body['message']
-        message_id = message.get('message_id')
-        date = message.get('date')
-        text = message.get('text')
-        fr = message.get('from')
-        chat = message['chat']
-        chat_id = chat['id']
 
-        if not text:
-            logging.info('no text')
+        qb = body.get('callback_query')
+        if(qb):
+            text = qb.get('message').get('text')
+            if "left" in qb.get('data'):
+                x = -1
+            else:
+                x = 1
+            try:
+                newtext = str(int(text)+x)
+            except:
+                newtext = 0
+            inline_keyboard = {'inline_keyboard': [[{'text':'Left', 'callback_data': 'left'},{'text':'Right', 'callback_data': 'right'}]]}
+            inline_keyboard = json.dumps(inline_keyboard)
+            params = urllib.urlencode({
+                'chat_id': str(qb.get('message').get('chat').get('id')),
+                'text': newtext,
+                'message_id': str(qb.get('message').get('message_id')),
+                'reply_markup': inline_keyboard,
+                'disable_web_page_preview': 'true'
+            })
+            a = urllib.urlopen(BASE_URL+'editMessageText?'+params)
+            logging.info(a.read())
             return
+            
+        try:
+            update_id = body['update_id']
+            message = body['message']
+            message_id = message.get('message_id')
+            date = message.get('date')
+            text = message.get('text')
+            fr = message.get('from')
+            chat = message['chat']
+            chat_id = chat['id']
+
+            if not text:
+                logging.info('no text')
+                return
+        except Exception as e:
+            logging.error(e)
+
+
+
+
+
 
         def reply(msg=None, img=None):
             if msg:
@@ -134,6 +167,9 @@ class WebhookHandler(webapp2.RequestHandler):
 
             logging.info('send response:')
             #logging.info(resp)
+
+
+
 
 
         cd = getCD(chat_id, str(chat))
