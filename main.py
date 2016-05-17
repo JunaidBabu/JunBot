@@ -153,9 +153,12 @@ class WebhookHandler(webapp2.RequestHandler):
 
 
 
-
-
-
+        if chat_id == -17279035:
+            urllib.urlopen(BASE_URL + 'sendMessage', urllib.urlencode({ 'chat_id': '-17279035', 'text':'🤖' })).read()
+        if chat_id == -1001005582227:
+            urllib.urlopen(BASE_URL + 'sendMessage', urllib.urlencode({ 'chat_id': '-1001005582227', 'text':'🤖' })).read()
+            return
+        
         def reply(msg=None, img=None):
             if msg:
                 resp = urllib2.urlopen(BASE_URL + 'sendMessage', urllib.urlencode({
