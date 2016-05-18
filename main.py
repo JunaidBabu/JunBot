@@ -204,11 +204,14 @@ class WebhookHandler(webapp2.RequestHandler):
             elif "history" in text:
                 reply (history)
             elif "rcg" in text:
-                from bs4 import BeautifulSoup
-                soup = BeautifulSoup(urllib.urlopen('http://explosm.net/rcg').read())
-                url = soup.find_all(id='rcg-comic')[0].find('img')['src']
-                params = urllib.urlencode({'chat_id': str(16795984),'text': url})
-                a = urllib.urlopen(BASE_URL+'sendMessage?'+params)
+                try:
+                    from bs4 import BeautifulSoup
+                    soup = BeautifulSoup(urllib.urlopen('http://explosm.net/rcg').read())
+                    url = soup.find_all(id='rcg-comic')[0].find('img')['src']
+                    params = urllib.urlencode({'chat_id': str(16795984),'text': url})
+                    a = urllib.urlopen(BASE_URL+'sendMessage?'+params)
+                except:
+                    pass
             else:
                 reply('Oopsie!!')
         else:
