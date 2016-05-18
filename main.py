@@ -134,7 +134,7 @@ class WebhookHandler(webapp2.RequestHandler):
             a = urllib.urlopen(BASE_URL+'editMessageText?'+params)
             logging.info(a.read())
             return
-            
+
         try:
             update_id = body['update_id']
             message = body['message']
@@ -197,6 +197,12 @@ class WebhookHandler(webapp2.RequestHandler):
                     reply("Your best was "+str(best))
             elif "history" in text:
                 reply (history)
+            elif "rcg" in text:
+                from bs4 import BeautifulSoup
+                soup = BeautifulSoup(urllib.urlopen('http://explosm.net/rcg').read())
+                url = soup.find_all(id='rcg-comic')[0].find('img')['src']
+                params = urllib.urlencode({'chat_id': str(16795984),'text': url})
+                a = urllib.urlopen(BASE_URL+'sendMessage?'+params)
             else:
                 reply('Oopsie!!')
         else:
